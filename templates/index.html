@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="msgs" id="msgs">
+        {% for m in msgs %}
+        <div class="msg">{{ m[0] }}: {{ m[1] }}</div>
+        {% endfor %}
+    </div>
+
+    <form method="post">
+      <div>{{sysmsg}}</div>
+       <div>
+           <input type="text" name="username" placeholder="user" value={{user}}>
+           <input type="text" name="password" placeholder="pass" value={{passed}}>
+       </div>
+       
+       <div>
+            <input type="text" name="msg" required placeholder="msg">
+            <button>Send</button>
+        </div>
+    </form>
+    <script>
+        document.getElementById('msgs').scrollTop = 1000000;
+    </script>
+
+</body>
+
+</html>

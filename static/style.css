@@ -1,0 +1,38 @@
+*{
+    box-sizing: border-box;
+}
+body{
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+.msgs {
+    width: 100vw;
+    overflow-y: auto;
+    background: teal;
+}
+.msg{
+    padding: 5px;
+    font-size: 24px;
+    background: #c0ffd3;
+    box-shadow: 2px 2px 2px #43bf68;
+    margin: 10px; 
+}
+
+form{
+    width: 100vw;
+}
+
+form div{
+    display: flex;
+}
+
+input{
+    flex: 1;
+    font-size: 24px;
+}
+
+button{
+    font-size: 30px;
+}
