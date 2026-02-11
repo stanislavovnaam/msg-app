@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        .users{
+            display: flex;
+            background: pink;
+            border: solid 2px grey;
+            padding: 5px;
+        }
+        .user{
+            background: lightblue;
+            border: solid 2px grey;
+            padding: 5px;
+            flex: 1;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    {% for u in users %}
+    <div class="users">
+    <div class="user">{{ u[0] }} </div>
+    <div class="user">{{ u[1] }}</div>
+    </div>
+    {% endfor %}
+    <br><br>
+    {{msgs}}
+</body>
+</html>
