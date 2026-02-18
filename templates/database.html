@@ -1,32 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title>Document</title>
+    <title>Database</title>
     <style>
-        .users{
-            display: flex;
-            background: pink;
-            border: solid 2px grey;
-            padding: 5px;
-        }
-        .user{
+        div {
             background: lightblue;
-            border: solid 2px grey;
+            border: solid 2px teal;
             padding: 5px;
-            flex: 1;
+            display: inline-block;
+            width: 40vw;
             word-break: break-all;
         }
+
     </style>
 </head>
+
 <body>
+    {{ users }}
+    <br><br>
     {% for u in users %}
-    <div class="users">
-    <div class="user">{{ u[0] }} </div>
-    <div class="user">{{ u[1] }}</div>
-    </div>
+            <div>{{ u[0] }}</div>
+            <div>{{ u[1] }}</div>
+            <br>
     {% endfor %}
     <br><br>
-    {{msgs}}
+    {{ msgs }}
+    
 </body>
+
 </html>

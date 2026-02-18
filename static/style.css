@@ -24,7 +24,7 @@ form{
     width: 100vw;
 }
 
-form div{
+form div {
     display: flex;
 }
 
@@ -33,6 +33,10 @@ input{
     font-size: 24px;
 }
 
-button{
+#send{
     font-size: 30px;
+}
+
+#out{
+    
 }

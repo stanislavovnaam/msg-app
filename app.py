@@ -1,110 +1,189 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
-import os
-
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = "dev-secret"
+
 DB_PATH = "data.db"
 
+
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "secret"
+
+
+# ---------------------------
+# Инициализация базы данных
+# ---------------------------
 def init_db():
-    #if not os.path.exists(DB_PATH):
-        conn = sqlite3.connect(DB_PATH)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS msgs (
-                username TEXT,
-                msg TEXT
-            )
-        """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                username TEXT,
-                password TEXT
-            )
-        """)
-        conn.commit()
-        conn.close()
+    conn = sqlite3.connect(DB_PATH)
+
+    # Таблица сообщений
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS msgs (
+            username TEXT,
+            msg TEXT
+        )
+    """)
+
+    # Таблица пользователей
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT,
+            password TEXT
+        )
+    """)
+    
+    # Создания админ аккаунта
+    hashed = generate_password_hash(ADMIN_PASSWORD)
+
+    conn.execute(
+        "INSERT INTO users (username, password) VALUES (?, ?)",
+        (ADMIN_USERNAME, hashed)
+    )
+
+    conn.commit()
+    conn.close()
+
 
 init_db()
 
+
+# ---------------------------
+# Главная страница (чат)
+# ---------------------------
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    sysmsg = ""
-    loggedIn = False
-    formuser = ""
-    formpass = ""
-    # POST
+
+    # Если пользователь не залогинен — отправляем на login
+    if 'username' not in session:
+        return redirect('/login')
+
+    # POST — отправка сообщения
     if request.method == 'POST':
         msg = request.form['msg'].strip()
 
-        if msg != "":
+        if msg:
             conn = sqlite3.connect(DB_PATH)
-            
-            formuser = session.get('username')
-            #if loggedIn:
             conn.execute(
-                    "INSERT INTO msgs (username,msg) VALUES (?,?)",
-                    (formuser,msg)
-                 )
+                "INSERT INTO msgs (username, msg) VALUES (?, ?)",
+                (session['username'], msg)
+            )
             conn.commit()
             conn.close()
 
-        #return redirect('/')
-
-    # GET 
+            return redirect('/')  # предотвращаем повторную отправку формы
+        
+    is_admin = False
+    user = session.get('username')
+    
+    if user and user == ADMIN_USERNAME:
+        is_admin = True
+    # GET — получение сообщений
     conn = sqlite3.connect(DB_PATH)
     msgs = conn.execute("SELECT * FROM msgs").fetchall()
     conn.close()
 
-    return render_template('index.html', msgs=msgs, sysmsg=sysmsg)
+    return render_template('index.html', msgs=msgs, is_admin=is_admin)
 
+
+# ---------------------------
+# Просмотр базы (для отладки)
+# ---------------------------
 @app.route('/database')
 def database():
     conn = sqlite3.connect(DB_PATH)
+
     msgs = conn.execute("SELECT * FROM msgs").fetchall()
     users = conn.execute("SELECT * FROM users").fetchall()
-    
+
+    conn.close()
+
     return render_template('database.html', msgs=msgs, users=users)
 
+
+# ---------------------------
+# Админ панель
+# ---------------------------
+@app.route('/admin')
+def admin():
+    is_admin = False
+    user = session.get('username')
+    
+    if user and user == ADMIN_USERNAME:
+        is_admin = True
+    
+    if is_admin:
+        conn = sqlite3.connect(DB_PATH)
+        users = conn.execute("SELECT username FROM users").fetchall()
+        conn.close()
+        return render_template('admin.html',users=users)
+    else:
+        return "Доступ запрещен"
+    
+
+
+# ---------------------------
+# Логин / регистрация
+# ---------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    sysmsg = ""
-    conn = sqlite3.connect(DB_PATH)
+
     if request.method == 'POST':
-        formuser = request.form['username'].strip()
-        formpass = request.form['password'].strip()
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
 
-        db_user = conn.execute("SELECT username FROM users WHERE username = ?", (formuser,)).fetchone()
+        if not username or not password:
+            return render_template('login.html', sysmsg="Введите логин и пароль")
 
-        if db_user is None:
-            encryptedPass = generate_password_hash(formpass)
+        conn = sqlite3.connect(DB_PATH)
+
+        # Проверяем, существует ли пользователь
+        user = conn.execute(
+            "SELECT password FROM users WHERE username = ?",
+            (username,)
+        ).fetchone()
+
+        if user is None:
+            # Пользователя нет → создаём аккаунт
+            hashed = generate_password_hash(password)
+
             conn.execute(
-                "INSERT INTO users (username,password) VALUES (?,?)",
-                (formuser,encryptedPass)
+                "INSERT INTO users (username, password) VALUES (?, ?)",
+                (username, hashed)
             )
-            print("account created")
-            loggedIn =True
-            sysmsg = "account created"
-        else:
-            print("user exists!")
-            db_pass = conn.execute("SELECT password FROM users WHERE username = ?", (formuser,)).fetchone()
+            conn.commit()
+            conn.close()
 
-            if check_password_hash(db_pass[0], formpass):
-                loggedIn =True
-                sysmsg = "logged in"
-            else:
-                sysmsg = "wrong pass"
-                
-        conn.commit()
-        conn.close() 
-                
-        if loggedIn:
-            session['username'] = formuser
+            session['username'] = username
             return redirect('/')
-                
-           
-    return render_template('login.html', sysmsg=sysmsg)
 
+        else:
+            # Пользователь существует → проверяем пароль
+            stored_hash = user[0]
+
+            if check_password_hash(stored_hash, password):
+                conn.close()
+                session['username'] = username
+                return redirect('/')
+            else:
+                conn.close()
+                return render_template('login.html', sysmsg="Неверный пароль")
+
+    return render_template('login.html')
+
+
+# ---------------------------
+# Выход
+# ---------------------------
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/login')
+
+
+# ---------------------------
+# Запуск
+# ---------------------------
 if __name__ == "__main__":
     app.run()

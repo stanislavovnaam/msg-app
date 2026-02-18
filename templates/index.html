@@ -8,21 +8,31 @@
 <body>
     <div class="msgs" id="msgs">
         {% for m in msgs %}
-        <div class="msg">{{ m[0] }}: {{ m[1] }}</div>
+        <!-- msgs: [(bob,hi)] -->
+        <div class="msg">{{ m[0] }}: {{ m[1]|safe }}</div>
         {% endfor %}
     </div>
 
     <form method="post">
-      <div>{{sysmsg}}</div>
-       <div>
-            <input type="text" name="msg" required placeholder="msg">
-            <button>Send</button>
+        <div>{{ sysmsg }}</div>
+        <div>{{is_admin}}</div>
+
+        <div>
+            <input type="text" name="msg" required placeholder="Msg...">
+            <button id="send">Send</button>
         </div>
+    </form>
+    <form action="/logout">
+        <button id="out">Sing out</button>
+
+    </form>
+    <form action="/admin">
+       {% if is_admin %}
+        <button id="admin">Admin</button>
+        {% endif %}
     </form>
     <script>
         document.getElementById('msgs').scrollTop = 1000000;
     </script>
 
-</body>
-
-</html>
+</body></html>
